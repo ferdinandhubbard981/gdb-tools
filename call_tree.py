@@ -53,6 +53,7 @@ class CallTreeCommand(gdb.Command):
 
         # Start stepping
         gdb.execute("step")
+        return
 
     def stop_handler(self, event):
         """Handles breakpoints and function calls."""
@@ -79,6 +80,7 @@ class CallTreeCommand(gdb.Command):
         # we know that we are not at max depth, because if we were we would have stepped out to a lower depth
         if self.current_depth == previous_depth:
             gdb.execute("step")
+            return
 
         # Add the current function to the tree
         if self.current_depth == 0:
@@ -86,7 +88,9 @@ class CallTreeCommand(gdb.Command):
             # Stop execution if we have returned back to the initial function
             self.done = True
             gdb.events.stop.disconnect(self.stop_handler)
-            self.print_tree()
+            self.save_tree()
+            return
+
         elif self.current_depth > previous_depth:
             # We stepped into a new function
             node_id = f"node_{self.node_counter}"
@@ -106,14 +110,14 @@ class CallTreeCommand(gdb.Command):
         elif self.current_depth < self.max_depth:
             # Step into the next function call
             gdb.execute("step")
+            return
         else:
             # We are at max depth OR returning from a function
             gdb.execute("finish")
+            return
 
-    def print_tree(self):
-        """Formats and prints the call tree."""
-        print("\nCall Tree:")
-        self.call_tree.show()
+    def save_tree(self):
+        """Formats and saves the call tree."""
         self.call_tree.save2file("tree.txt")  # Save the tree to a file
 
 # Register command
